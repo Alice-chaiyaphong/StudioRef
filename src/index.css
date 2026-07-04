@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', 'Prompt', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'IBM Plex Sans Thai', 'Outfit', ui-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: #F4F7F6;
+  color: #2C3E42;
+}
+
+/* Custom scrollbar to match Cool Modern Tones */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EBF1F0;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBDAD5;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9BB0AA;
+}
