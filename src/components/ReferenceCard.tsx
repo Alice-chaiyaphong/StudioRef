@@ -27,45 +27,13 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
   return (
     <div 
       onClick={() => onSelect(design)}
-      className={`${bgClass} rounded-[28px] p-5 sm:p-6 flex flex-col justify-between overflow-hidden relative group cursor-pointer border border-black/5 shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
+      className={`${bgClass} rounded-[28px] p-4 flex flex-col justify-between overflow-hidden relative group cursor-pointer border border-black/5 shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1`}
     >
       {/* Hover natural overlay tint */}
       <div className="absolute top-0 left-0 w-full h-full bg-[#3A6360] opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"></div>
 
-      {/* Card Header & Badge */}
-      <div className="z-10 flex justify-between items-start">
-        <span className="text-[10px] bg-white/70 backdrop-blur-md px-3 py-1 rounded-full uppercase tracking-widest font-bold text-[#3A6360] shadow-2xs">
-          {design.category}
-        </span>
-
-        <button
-          onClick={(e) => onToggleBookmark(design.id, e)}
-          className={`p-2 rounded-full transition-colors duration-200 ${
-            design.bookmarked 
-              ? 'bg-[#3A6360] text-white shadow-xs' 
-              : 'bg-white/50 text-[#5C7276] hover:bg-white text-[#2C3E42]'
-          }`}
-          title={design.bookmarked ? 'นำออกจากมู้ดบอร์ด' : 'บันทึกลงมู้ดบอร์ด'}
-        >
-          <Bookmark className="w-3.5 h-3.5 fill-current" />
-        </button>
-      </div>
-
-      {/* Card Title & Vibe */}
-      <div className="z-10 mt-3">
-        <h3 className="text-lg sm:text-xl font-serif italic text-[#1E2E31] leading-snug group-hover:text-[#3A6360] transition-colors">
-          {design.title}
-        </h3>
-        <p className="text-xs text-[#5C7276] font-medium mt-0.5">
-          {design.subtitle}
-        </p>
-        <p className="text-sm opacity-70 mt-1 line-clamp-2 text-[#2C3E42] leading-relaxed">
-          {design.description}
-        </p>
-      </div>
-
-      {/* Preview Image Frame */}
-      <div className="w-full aspect-[4/3] bg-[#CBDAD5] rounded-2xl mt-4 border border-black/5 shadow-inner overflow-hidden relative z-10">
+      {/* Preview Image Frame - NOW AT THE TOP OF THE CARD */}
+      <div className="w-full aspect-[4/3] bg-[#CBDAD5] rounded-2xl border border-black/5 shadow-inner overflow-hidden relative z-10 mb-3.5">
         <img 
           src={design.imageUrl} 
           alt={design.title} 
@@ -73,13 +41,32 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
           loading="lazy"
         />
         
+        {/* Card Header overlay on top of image */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex justify-between items-center">
+          <span className="text-[9px] bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full uppercase tracking-widest font-bold text-[#3A6360] shadow-sm">
+            {design.category}
+          </span>
+
+          <button
+            onClick={(e) => onToggleBookmark(design.id, e)}
+            className={`p-1.5 rounded-full transition-colors duration-200 shadow-sm ${
+              design.bookmarked 
+                ? 'bg-[#3A6360] text-white' 
+                : 'bg-white/90 text-[#5C7276] hover:bg-white text-[#2C3E42]'
+            }`}
+            title={design.bookmarked ? 'นำออกจากมู้ดบอร์ด' : 'บันทึกลงมู้ดบอร์ด'}
+          >
+            <Bookmark className="w-3 h-3 fill-current" />
+          </button>
+        </div>
+        
         {/* Color Palette Chips overlay at bottom */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/85 backdrop-blur-md p-1.5 rounded-xl flex items-center justify-between shadow-xs opacity-90 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 bg-white/90 backdrop-blur-md p-1.5 rounded-xl flex items-center justify-between shadow-xs opacity-95 group-hover:opacity-100 transition-opacity">
           <div className="flex -space-x-1 pl-1">
             {design.palette.slice(0, 5).map((color, idx) => (
               <span 
                 key={idx}
-                className="w-4 h-4 rounded-full border border-white shadow-2xs inline-block"
+                className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs inline-block"
                 style={{ backgroundColor: color }}
                 title={color}
               />
@@ -91,31 +78,46 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
         </div>
       </div>
 
-      {/* Creator Info (if community design) */}
-      {(design as any).userName && (
-        <div className="z-10 mt-3 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {((design as any).userPhoto) ? (
-              <img 
-                src={(design as any).userPhoto} 
-                alt={(design as any).userName} 
-                className="w-5 h-5 rounded-full object-cover border border-[#B8CAC4] shrink-0"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-5 h-5 rounded-full bg-[#3A6360] text-white text-[9px] font-bold flex items-center justify-center shrink-0">
-                {(design as any).userName.charAt(0)}
-              </div>
-            )}
-            <span className="text-[10px] text-[#5C7276] truncate">
-              แชร์โดย <span className="font-bold text-[#1E2E31]">{(design as any).userName}</span>
+      {/* Card Title, Vibe & Description below the image */}
+      <div className="z-10 flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="text-base sm:text-lg font-serif italic text-[#1E2E31] leading-snug group-hover:text-[#3A6360] transition-colors font-medium">
+            {design.title}
+          </h3>
+          <p className="text-[11px] text-[#5C7276] font-semibold mt-0.5">
+            {design.subtitle}
+          </p>
+          <p className="text-xs opacity-85 mt-1.5 line-clamp-2 text-[#2C3E42] leading-relaxed">
+            {design.description}
+          </p>
+        </div>
+
+        {/* Creator Info (if community design) */}
+        {(design as any).userName && (
+          <div className="mt-3.5 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {((design as any).userPhoto) ? (
+                <img 
+                  src={(design as any).userPhoto} 
+                  alt={(design as any).userName} 
+                  className="w-4.5 h-4.5 rounded-full object-cover border border-[#B8CAC4] shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-4.5 h-4.5 rounded-full bg-[#3A6360] text-white text-[8px] font-bold flex items-center justify-center shrink-0">
+                  {(design as any).userName.charAt(0)}
+                </div>
+              )}
+              <span className="text-[9px] text-[#5C7276] truncate">
+                แชร์โดย <span className="font-bold text-[#1E2E31]">{(design as any).userName}</span>
+              </span>
+            </div>
+            <span className="text-[8px] bg-[#3A6360]/10 text-[#3A6360] px-2 py-0.5 rounded-full font-bold shrink-0">
+              ชุมชน
             </span>
           </div>
-          <span className="text-[9px] bg-[#3A6360]/10 text-[#3A6360] px-2 py-0.5 rounded-full font-bold shrink-0">
-            ชุมชน
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

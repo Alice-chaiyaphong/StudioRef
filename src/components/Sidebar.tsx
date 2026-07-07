@@ -1,11 +1,12 @@
 import React from 'react';
-import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut } from 'lucide-react';
+import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface SidebarProps {
-  activeTab: 'explore' | 'palettes' | 'ai' | 'saved';
-  setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved') => void;
+  activeTab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared';
+  setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared') => void;
   savedCount: number;
+  sharedCount: number;
   user: User | null;
   onSignIn: () => void;
   onSignOut: () => void;
@@ -15,6 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   savedCount,
+  sharedCount,
   user,
   onSignIn,
   onSignOut
@@ -119,6 +121,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   activeTab === 'saved' ? 'bg-white/20 text-white' : 'bg-[#D1DDD9] text-[#3A6360]'
                 }`}>
                   {savedCount}
+                </span>
+              )}
+            </div>
+
+            <div 
+              onClick={() => setActiveTab('shared')}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                activeTab === 'shared' 
+                  ? 'bg-[#3A6360] text-white shadow-sm font-medium' 
+                  : 'text-[#5C7276] hover:bg-[#D1DDD9] hover:text-[#1E2E31]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="w-4 h-4 opacity-80" />
+                <span className="text-sm">ผลงานที่เราแชร์</span>
+              </div>
+              {sharedCount > 0 && (
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'shared' ? 'bg-white/20 text-white' : 'bg-[#D1DDD9] text-[#3A6360]'
+                }`}>
+                  {sharedCount}
                 </span>
               )}
             </div>
@@ -230,6 +253,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <Palette className="w-5 h-5 mb-0.5" />
           <span className="text-[10px]">พาเลทสี</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('shared')}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors relative ${
+            activeTab === 'shared' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
+          }`}
+        >
+          <Globe className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">งานแชร์</span>
+          {sharedCount > 0 && (
+            <span className="absolute top-1 right-6 bg-[#3A6360] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+              {sharedCount}
+            </span>
+          )}
         </button>
 
         <button 

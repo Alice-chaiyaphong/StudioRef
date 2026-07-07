@@ -6,15 +6,16 @@ import { ExploreView } from './components/ExploreView.tsx';
 import { PaletteStudioView } from './components/PaletteStudioView.tsx';
 import { AIAssistantView } from './components/AIAssistantView.tsx';
 import { SavedMoodboardView } from './components/SavedMoodboardView.tsx';
+import { SharedItemsView } from './components/SharedItemsView.tsx';
 import { ReferenceDetailModal } from './components/ReferenceDetailModal.tsx';
 import { auth, googleProvider, db, handleFirestoreError, OperationType } from './firebase.ts';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { AddContentModal } from './components/AddContentModal.tsx';
-import { AlertTriangle, Copy, Check, X, Globe, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Copy, Check, X, Globe, ExternalLink, Sparkles, Plus } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved'>('explore');
+  const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved' | 'shared'>('explore');
   const [references, setReferences] = useState<ReferenceDesign[]>(INITIAL_REFERENCES);
   const [palettes, setPalettes] = useState<ColorPalette[]>(CURATED_PALETTES);
   const [selectedReference, setSelectedReference] = useState<ReferenceDesign | null>(null);
@@ -208,6 +209,14 @@ export default function App() {
 
   const savedCount = references.filter(r => r.bookmarked).length;
 
+  const mySharedDesigns = user 
+    ? communityDesigns.filter(item => item.userId === user.uid) 
+    : [];
+  const mySharedPalettes = user 
+    ? communityPalettes.filter(item => item.userId === user.uid) 
+    : [];
+  const sharedCount = mySharedDesigns.length + mySharedPalettes.length;
+
   return (
     <div className="h-screen w-full bg-[#F4F7F6] text-[#2C3E42] flex flex-col md:flex-row overflow-hidden font-sans select-none" style={{ backgroundColor: '#F4F7F6' }}>
       {/* Fixed Left Navigation Rail */}
@@ -215,6 +224,7 @@ export default function App() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         savedCount={savedCount}
+        sharedCount={sharedCount}
         user={user}
         onSignIn={handleGoogleSignIn}
         onSignOut={handleSignOut}
@@ -256,6 +266,49 @@ export default function App() {
             onExploreMore={() => setActiveTab('explore')}
           />
         )}
+
+        {activeTab === 'shared' && (
+          <SharedItemsView 
+            sharedDesigns={mySharedDesigns}
+            sharedPalettes={mySharedPalettes}
+            allDesigns={communityDesigns}
+            allPalettes={communityPalettes}
+            user={user}
+            onSignIn={handleGoogleSignIn}
+            onSelectReference={(ref) => setSelectedReference(ref)}
+            onToggleBookmark={handleToggleBookmark}
+            onOpenAddModal={() => setIsAddModalOpen(true)}
+          />
+        )}
+
+        {/* Floating Action Buttons (FABs) in the Bottom Right Corner */}
+        <div className="fixed md:absolute bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
+          {activeTab !== 'ai' && (
+            <button 
+              onClick={() => handleOpenAIAssistant("แนะนำเรฟดีไซน์และโทนสีมินิมอลโมเดิร์นโทนเย็นสำหรับปรึกษางานใหม่ให้หน่อย")}
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3A6360] text-white flex items-center justify-center hover:bg-[#2C4B49] hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+              title="ปรึกษา AI"
+              id="fab-consult-ai"
+            >
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+                ปรึกษา AI ✨
+              </span>
+            </button>
+          )}
+
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#1E2E31] text-white flex items-center justify-center hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+            title="แชร์ผลงานใหม่"
+            id="fab-share-design"
+          >
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8CAC4]" />
+            <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+              แชร์ผลงานใหม่ ✦
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Reference Modal Specs Detail */}

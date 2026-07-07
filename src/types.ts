@@ -13,6 +13,8 @@ export interface ColorPalette {
   colors: ColorSpecification[];
   tags: string[];
   likes: number;
+  userId?: string;
+  userName?: string;
 }
 
 export interface ReferenceDesign {
@@ -32,6 +34,8 @@ export interface ReferenceDesign {
   layoutNotes: string[];
   likes: number;
   bookmarked?: boolean;
+  userId?: string;
+  userName?: string;
 }
 
 export interface AIAssistantConsultation {

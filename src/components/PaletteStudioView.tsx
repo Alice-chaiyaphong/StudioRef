@@ -52,56 +52,48 @@ export const PaletteStudioView: React.FC<PaletteStudioViewProps> = ({
   };
 
   return (
-    <main className="flex-1 flex flex-col p-4 sm:p-8 md:p-10 overflow-y-auto bg-[#F4F7F6]">
+    <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 overflow-y-auto bg-[#F4F7F6]">
       {/* View Header */}
-      <header className="mb-6 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-5">
+      <header className="mb-4">
         <div>
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A938E]">Natural Palette Studio</span>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif italic text-[#1E2E31] mt-1">
+          <span className="text-[9px] uppercase tracking-widest font-bold text-[#7A938E]">Natural Palette Studio</span>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-serif italic text-[#1E2E31] mt-0.5">
             พาเลทสีสไตล์ธรรมชาติโทนเย็น & มินิมอล
           </h1>
-          <p className="text-xs sm:text-sm text-[#5C7276] mt-2 max-w-2xl">
+          <p className="text-xs sm:text-xs text-[#5C7276] mt-1 max-w-2xl">
             คัดสรรคู่สีจากธรรมชาติและธาตุเย็นที่เรียบง่าย อัตราส่วน 60:30:10 พร้อมเครื่องมือสร้างพาเลทด้วย AI เพื่อมู้ดที่ผ่อนคลายและสงบ
           </p>
         </div>
-
-        <button 
-          onClick={onOpenAddModal}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-[#1E2E31] text-white hover:bg-black text-xs sm:text-sm font-semibold transition-colors shadow-xs cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 text-[#B8CAC4]" />
-          <span>แชร์พาเลทสีใหม่</span>
-        </button>
       </header>
 
       {/* Source Collection Switcher */}
-      <div className="flex bg-[#DDE5E4]/60 p-1 rounded-xl mb-6 w-fit border border-[#D1DDD9]/30 shrink-0">
+      <div className="flex bg-[#DDE5E4]/60 p-0.5 rounded-lg mb-4 w-fit border border-[#D1DDD9]/30 shrink-0">
         <button
           onClick={() => setSourceTab('curated')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
             sourceTab === 'curated'
               ? 'bg-[#3A6360] text-white shadow-xs'
               : 'text-[#5C7276] hover:text-[#1E2E31]'
           }`}
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="w-3 h-3" />
           <span>แนะนำโดยสตูดิโอ ({palettes.length})</span>
         </button>
         <button
           onClick={() => setSourceTab('community')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
             sourceTab === 'community'
               ? 'bg-[#3A6360] text-white shadow-xs'
               : 'text-[#5C7276] hover:text-[#1E2E31]'
           }`}
         >
-          <Globe className="w-3.5 h-3.5" />
+          <Globe className="w-3 h-3" />
           <span>พาเลทสีจากชุมชน ({communityPalettes.length})</span>
         </button>
       </div>
 
       {/* AI Palette Generator Form */}
-      <section className="bg-[#EBF1F0] rounded-[28px] p-5 sm:p-6 lg:p-8 border border-[#D1DDD9] mb-8 shadow-2xs">
+      <section className="bg-[#EBF1F0] rounded-[24px] p-4 sm:p-5 lg:p-6 border border-[#D1DDD9] mb-5 shadow-2xs">
         <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-5">
           <div>
             <div className="flex items-center gap-2 text-[#3A6360] font-bold text-sm">

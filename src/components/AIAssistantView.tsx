@@ -97,14 +97,14 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ initialPrompt,
   return (
     <main className="flex-1 flex flex-col h-full bg-[#F4F7F6] overflow-hidden">
       {/* Top Banner Header */}
-      <header className="px-5 sm:px-8 py-4 sm:py-5 border-b border-[#D1DDD9] bg-[#EBF1F0] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-[#3A6360] text-white flex items-center justify-center shadow-xs">
-            <Sparkles className="w-4 sm:w-5 h-4 sm:h-5 text-[#2E8B90]" />
+      <header className="px-4 sm:px-6 py-3 border-b border-[#D1DDD9] bg-[#EBF1F0] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-[#3A6360] text-white flex items-center justify-center shadow-xs">
+            <Sparkles className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-[#2E8B90]" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-serif italic text-[#1E2E31] font-bold">StudioRef AI Consultant</h2>
-            <p className="text-[10px] sm:text-xs text-[#7A938E]">ผู้ช่วยดีไซเนอร์ส่วนตัว แนะนำโทนสีเย็นและเลย์เอาต์มินิมอล</p>
+            <h2 className="text-base sm:text-lg font-serif italic text-[#1E2E31] font-bold">StudioRef AI Consultant</h2>
+            <p className="text-[9px] sm:text-xs text-[#7A938E]">ผู้ช่วยดีไซเนอร์ส่วนตัว แนะนำโทนสีเย็นและเลย์เอาต์มินิมอล</p>
           </div>
         </div>
         <span className="text-[9px] uppercase font-mono px-2.5 py-1 bg-[#D1DDD9] text-[#3A6360] rounded-full font-bold hidden sm:inline-block">

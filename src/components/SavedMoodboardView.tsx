@@ -17,16 +17,16 @@ export const SavedMoodboardView: React.FC<SavedMoodboardViewProps> = ({
   onExploreMore
 }) => {
   return (
-    <main className="flex-1 flex flex-col p-4 sm:p-8 md:p-10 overflow-y-auto bg-[#F4F7F6]">
-      <header className="mb-8">
-        <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A938E]">Your Workspace Moodboard</span>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif italic text-[#1E2E31] mt-1 flex items-center gap-3">
+    <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 overflow-y-auto bg-[#F4F7F6]">
+      <header className="mb-4">
+        <span className="text-[9px] uppercase tracking-widest font-bold text-[#7A938E]">Your Workspace Moodboard</span>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-serif italic text-[#1E2E31] mt-0.5 flex items-center gap-2.5">
           <span>มู้ดบอร์ด & คลังเรฟที่บันทึกไว้</span>
-          <span className="text-xs font-sans not-italic bg-[#D1DDD9] text-[#3A6360] px-3 py-1 rounded-full font-bold">
+          <span className="text-[10px] sm:text-xs font-sans not-italic bg-[#D1DDD9] text-[#3A6360] px-2.5 py-0.5 rounded-full font-bold">
             {savedReferences.length} ไอเทม
           </span>
         </h1>
-        <p className="text-xs sm:text-sm text-[#5C7276] mt-2 max-w-xl">
+        <p className="text-xs sm:text-xs lg:text-sm text-[#5C7276] mt-1 max-w-xl">
           รวบรวมเรฟเฟอร์เรตและโทนสีที่คุณเลือกไว้เพื่อนำไปใช้ตกแต่งกราฟิกหรือจัดเลย์เอาต์งานดีไซน์จริงในสไตล์โทนเย็น
         </p>
       </header>
