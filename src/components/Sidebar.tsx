@@ -1,13 +1,24 @@
 import React from 'react';
-import { Compass, Sparkles, Palette, Bookmark, Menu } from 'lucide-react';
+import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut } from 'lucide-react';
+import { User } from 'firebase/auth';
 
 interface SidebarProps {
   activeTab: 'explore' | 'palettes' | 'ai' | 'saved';
   setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved') => void;
   savedCount: number;
+  user: User | null;
+  onSignIn: () => void;
+  onSignOut: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, savedCount }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeTab,
+  setActiveTab,
+  savedCount,
+  user,
+  onSignIn,
+  onSignOut
+}) => {
   return (
     <>
       {/* MOBILE TOP BAR (Only visible on mobile/tablet < md) */}
@@ -23,12 +34,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] bg-[#3A6360]/10 text-[#3A6360] px-2.5 py-1 rounded-full font-bold">
-            Pro Member
-          </span>
-          <div className="w-8 h-8 rounded-full bg-[#D1DDD9] border border-[#B8CAC4] overflow-hidden flex items-center justify-center font-serif text-[#3A6360] font-bold text-sm">
-            DP
-          </div>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-xs font-bold text-[#1E2E31]">{user.displayName || 'Designer'}</span>
+                <span className="text-[9px] text-[#7A938E]">เชื่อมต่อแล้ว</span>
+              </div>
+              {user.photoURL ? (
+                <img 
+                  src={user.photoURL} 
+                  alt={user.displayName || 'User'} 
+                  referrerPolicy="no-referrer" 
+                  className="w-8 h-8 rounded-full border border-[#B8CAC4] object-cover" 
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-[#3A6360] text-white flex items-center justify-center font-bold text-xs">
+                  {user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+              <button 
+                onClick={onSignOut}
+                className="p-1 text-[#7A938E] hover:text-red-500 transition-colors ml-1"
+                title="ออกจากระบบ"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onSignIn}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3A6360] text-white rounded-lg text-xs font-bold shadow-xs hover:bg-[#2E4F4C] transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>เข้าสู่ระบบ</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -115,17 +155,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, saved
 
         {/* User Profile Footer */}
         <div className="pt-6 border-t border-[#D1DDD9]">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-[#D1DDD9]/50 transition-colors cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-[#D1DDD9] border border-[#B8CAC4] overflow-hidden flex items-center justify-center font-serif text-[#3A6360] font-bold text-lg bg-gradient-to-br from-[#D1DDD9] to-[#B8CAC4]">
-              DP
+          {user ? (
+            <div className="flex items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-3 min-w-0">
+                {user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt={user.displayName || 'User'} 
+                    referrerPolicy="no-referrer" 
+                    className="w-10 h-10 rounded-full border border-[#B8CAC4] object-cover shrink-0" 
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#3A6360] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#1E2E31] truncate">{user.displayName || 'Designer'}</p>
+                  <p className="text-[10px] text-[#7A938E] truncate">{user.email}</p>
+                </div>
+              </div>
+              <button 
+                onClick={onSignOut}
+                title="ออกจากระบบ"
+                className="p-1.5 rounded-lg text-[#7A938E] hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <p className="text-sm font-bold text-[#1E2E31]">Designer P.</p>
-              <p className="text-[11px] text-[#7A938E] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3A6360]"></span> Pro Member
-              </p>
-            </div>
-          </div>
+          ) : (
+            <button
+              onClick={onSignIn}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3A6360] hover:bg-[#2E4F4C] text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>เข้าสู่ระบบด้วย Google</span>
+            </button>
+          )}
         </div>
       </aside>
 

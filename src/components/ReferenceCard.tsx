@@ -90,6 +90,32 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Creator Info (if community design) */}
+      {(design as any).userName && (
+        <div className="z-10 mt-3 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {((design as any).userPhoto) ? (
+              <img 
+                src={(design as any).userPhoto} 
+                alt={(design as any).userName} 
+                className="w-5 h-5 rounded-full object-cover border border-[#B8CAC4] shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-[#3A6360] text-white text-[9px] font-bold flex items-center justify-center shrink-0">
+                {(design as any).userName.charAt(0)}
+              </div>
+            )}
+            <span className="text-[10px] text-[#5C7276] truncate">
+              แชร์โดย <span className="font-bold text-[#1E2E31]">{(design as any).userName}</span>
+            </span>
+          </div>
+          <span className="text-[9px] bg-[#3A6360]/10 text-[#3A6360] px-2 py-0.5 rounded-full font-bold shrink-0">
+            ชุมชน
+          </span>
+        </div>
+      )}
     </div>
   );
 };

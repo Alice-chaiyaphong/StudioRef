@@ -4,8 +4,17 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
+import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
+
+// Configure Cloudinary with user-supplied credentials or env override
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'djqk7kine',
+  api_key: process.env.CLOUDINARY_API_KEY || '939785846112433',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '4F-FrVBj3DQ1dgufLUxEIuG0VJ0',
+  secure: true
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +35,34 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Increase limit for base64 image uploads
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+  // Cloudinary image upload endpoint
+  app.post('/api/upload', async (req, res) => {
+    try {
+      const { image } = req.body;
+      if (!image) {
+        return res.status(400).json({ error: 'กรุณาระบุรูปภาพที่ต้องการอัปโหลด' });
+      }
+
+      // Upload base64 representation directly to Cloudinary
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        folder: 'ref_designs',
+        resource_type: 'image'
+      });
+
+      return res.json({
+        success: true,
+        url: uploadResponse.secure_url,
+        public_id: uploadResponse.public_id
+      });
+    } catch (err: any) {
+      console.error('Cloudinary upload error:', err);
+      return res.status(500).json({ error: 'ไม่สามารถอัปโหลดรูปภาพได้: ' + (err.message || err) });
+    }
+  });
 
   // Health check
   app.get('/api/health', (req, res) => {
@@ -42,38 +78,40 @@ async function startServer() {
       }
 
       const ai = getAIClient();
-      const systemInstruction = `คุณคือ StudioRef AI Senior Design Consultant พิถีพิถันด้าน Minimal & Natural Aesthetics
-ให้คำแนะนำนักออกแบบภาษาไทยด้วยน้ำเสียงอบอุ่น สุขุม มืออาชีพ
-วิเคราะห์โจทย์ข้อความของลูกค้า แล้วให้คำแนะนำสไตล์งาน โทนสี (พร้อมรหัส HEX 4-5 สี) ฟอนต์ และไอเดียการจัดวาง
+      const systemInstruction = `คุณคือ StudioRef AI Senior Design Consultant ที่เชี่ยวชาญการให้คำแนะนำครอบคลุมทุกสาขางานดีไซน์: ทั้งนักออกแบบกราฟิก (Graphic), สื่อดิจิทัล (Digital Media), นักออกแบบผลิตภัณฑ์ (Product Design), ยูไอ/ยูเอ็กซ์และเว็บ (UI/UX & Web), บรรจุภัณฑ์ (Packaging) และสถาปัตยกรรม/ภายใน (Interior & Architecture)
+เน้นการคุมสไตล์เรียบเท่ ทันสมัย โทนสีเย็น (Cool Tone) และความมินิมอลเฉียบคม ปลอดโปร่ง
+ให้คำแนะนำนักออกแบบภาษาไทยด้วยน้ำเสียงน่าดึงดูด มืออาชีพ ทันสมัย คอนเซปต์แน่น
+วิเคราะห์โจทย์ข้อความของลูกค้า แล้วให้คำแนะนำสไตล์งาน โทนสีเย็น (พร้อมรหัส HEX 4-5 สี) ฟอนต์ และไอเดียการจัดวาง/การใช้วัสดุที่เหมาะสมกับประเภทสายงานนั้นๆ
 ตอบกลับเป็นรูปแบบ JSON โครงสร้างนี้เท่านั้น:
 {
-  "projectConcept": "สรุปสั้นๆ ถอดความจากโจทย์ลูกค้า",
-  "vibeSummary": "คำอธิบายมู้ดแอนด์โทนสไตล์ธรรมชาติ 2-3 ประโยค",
+  "projectConcept": "สรุปสั้นๆ ถอดความจากโจทย์ลูกค้าและสายดีไซน์ที่เหมาะสม",
+  "vibeSummary": "คำอธิบายมู้ดแอนด์โทนสไตล์เย็นมินิมอล 2-3 ประโยค",
   "colorPaletteRecommendation": {
-    "title": "ชื่อพาเลทสีสไตล์ธรรมชาติ เช่น Warm Cream & Stone",
+    "title": "ชื่อพาเลทสีสไตล์เย็นมินิมอล เช่น Slate Spruce & Frost Mint",
     "colors": [
-      { "hex": "#...", "name": "ชื่อสีออร์แกนิก", "proportion": "60% หรือ 30% หรือ 10%", "reason": "เหตุผลสั้นๆ" }
+      { "hex": "#...", "name": "ชื่อสีภาษาไทยเก๋ๆ", "proportion": "60% หรือ 25% หรือ 10% หรือ 5%", "reason": "เหตุผลดีไซน์และบทบาทของสี" }
     ]
   },
   "typographyGuide": {
-    "headingFont": "แนะนำฟอนต์หัวข้อ เช่น Playfair Display หรือ Noto Serif Thai",
-    "bodyFont": "แนะนำฟอนต์เนื้อหา เช่น Prompt / Inter",
-    "rationale": "เหตุผลการจับคู่ฟอนต์นี้"
+    "headingFont": "แนะนำฟอนต์หัวข้อ เช่น Outfit / Space Grotesk / Playfair Display",
+    "bodyFont": "แนะนำฟอนต์เนื้อหา เช่น Prompt / Inter / JetBrains Mono / IBM Plex Sans Thai",
+    "rationale": "เหตุผลการจับคู่ฟอนต์นี้เพื่อเสริมสไตล์ของสายงาน"
   },
   "layoutBestPractices": [
-    "เทคนิคการจัดวางข้อ 1 เช่น กริดหรือสัดส่วนพื้นที่ว่าง",
-    "เทคนิคข้อ 2"
+    "เทคนิคการจัดวาง ระยะห่าง พื้นผิว หรือการเลือกใช้วัสดุสำหรับประเภทสายงานนั้นๆ ข้อ 1",
+    "เทคนิคข้อ 2",
+    "เทคนิคข้อ 3"
   ],
   "referenceInspirations": [
-    { "title": "ชื่อสไตล์เรฟ 1", "desc": "คำอธิบายสั้นๆ", "aspect": "จุดเด่นที่ควรนำมาใช้" },
-    { "title": "ชื่อสไตล์เรฟ 2", "desc": "คำอธิบายสั้นๆ", "aspect": "จุดเด่นที่ควรนำมาใช้" }
+    { "title": "ชื่อสไตล์เรฟ 1", "desc": "คำอธิบายเชิงวิชาชีพดีไซน์", "aspect": "จุดเด่นเชิงเทคนิคที่ควรนำมาใช้" },
+    { "title": "ชื่อสไตล์เรฟ 2", "desc": "คำอธิบายเชิงวิชาชีพดีไซน์", "aspect": "จุดเด่นเชิงเทคนิคที่ควรนำมาใช้" }
   ]
 }`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [
-          { role: 'user', parts: [{ text: `วิเคราะห์โปรเจกต์ดีไซน์นี้: "${prompt}" (ความชอบล่าสุด: ${currentVibe || 'เรียบง่าย ธรรมชาติ สบายตา'})` }] }
+          { role: 'user', parts: [{ text: `วิเคราะห์โปรเจกต์ดีไซน์นี้: "${prompt}" (ความชอบล่าสุด: ${currentVibe || 'เรียบหรู มินิมอล โทนเย็น สะอาดตา'})` }] }
         ],
         config: {
           systemInstruction,
@@ -92,30 +130,31 @@ async function startServer() {
         success: true,
         fallback: true,
         consultation: {
-          projectConcept: req.body.prompt || "การออกแบบสไตล์ธรรมชาติ",
-          vibeSummary: "เน้นความสะอาดตา สุภาพ และการใช้วัสดุออร์แกนิกที่ให้ความรู้สึกอบอุ่นและผ่อนคลาย",
+          projectConcept: req.body.prompt || "การออกแบบดีไซน์โทนเย็นมัลติฟังก์ชั่น",
+          vibeSummary: "เน้นความสะอาดตา นวัตกรรมล้ำสมัย และการเลือกเฉดสีโทนเย็นที่ช่วยลดอาการเหนื่อยล้าของสายตาและเพิ่มระดับความพรีเมียมให้กับตัวงาน",
           colorPaletteRecommendation: {
-            title: "Muted Sand & Olive Sage",
+            title: "Glacier Blue & Slate Spruce",
             colors: [
-              { hex: '#FDFCF9', name: 'Warm Paper Silk', proportion: '60%', reason: 'พื้นหลังหลักช่วยให้สบายตาและอ่านง่าย' },
-              { hex: '#F2EFE9', name: 'Alabaster Stone', proportion: '25%', reason: 'ใช้สำหรับกล่องข้อความหรือการ์ดย่อย' },
-              { hex: '#D9D4CC', name: 'Linen Grey', proportion: '8%', reason: 'สำหรับเส้นขอบแบ่งสัดส่วน' },
-              { hex: '#5A5A40', name: 'Olive Green', proportion: '5%', reason: 'สีหลักดึงดูดสายตา (Accent CTA)' },
-              { hex: '#2D2D1B', name: 'Charcoal Earth', proportion: '2%', reason: 'สีตัวอักษรเพื่อความคมชัด' }
+              { hex: '#F4F7F6', name: 'Ice Canvas', proportion: '60%', reason: 'พื้นหลังหลักช่วยให้รู้สึกปลอดโปร่ง ปราศจากสิ่งรบกวน' },
+              { hex: '#EBF1F0', name: 'Cool Breeze', proportion: '25%', reason: 'ใช้เป็นพื้นหลังของการ์ด ลื่นไหล สบายตา' },
+              { hex: '#DDE5E4', name: 'Frost Metal', proportion: '8%', reason: 'สำหรับชิ้นส่วนควบคุม เส้นแบ่งพิกเซล หรือขอบ' },
+              { hex: '#3A6360', name: 'Slate Spruce', proportion: '5%', reason: 'สีนำสายตาหลักของงาน คมเข้ม มีเอกลักษณ์' },
+              { hex: '#1E2E31', name: 'Deep Abyss', proportion: '2%', reason: 'สีตัวอักษรสำคัญและไอคอนเพื่อระดับ Contrast ชั้นเลิศ' }
             ]
           },
           typographyGuide: {
-            headingFont: "Playfair Display / Noto Serif Thai",
-            bodyFont: "Inter / Prompt Light",
-            rationale: "Serif ให้ความรู้สึกนุ่มนวลมีความประณีต เมื่อคู่กับ Sans-serif จะได้ความทันสมัยอ่านง่าย"
+            headingFont: "Outfit / Space Grotesk",
+            bodyFont: "Inter / Prompt Regular",
+            rationale: "Outfit ไร้หัวมีความโฉบเฉี่ยวสไตล์สากล เมื่อคู่กับ Inter สไตล์ละมุนจะช่วยยกระดับความน่าเชื่อถือให้กับเนื้อหาทุกสายดีไซน์"
           },
           layoutBestPractices: [
-            "เว้นพื้นที่ว่างรอบองค์ประกอบหลัก (Generous White Space) เพื่อไม่ให้รู้สึกอึดอัด",
-            "ใช้เส้นขอบบาง 1px สีอ่อนแทนการใส่เงาเข้ม"
+            "จัดวางกริดที่ยืดหยุ่นสูงแบบอเนกประสงค์ (Responsive Grid & Flexible Framework)",
+            "เว้นระยะขอบจอ (Margins) กว้างเป็นพิเศษไม่น้อยกว่า 24px เพื่อสร้างลุคหรูหราเบาสบายสไตล์นอร์ดิก",
+            "ควบคุมค่าน้ำหนักสีและเงาแบบโปร่งตา (Glassmorphic Elements) เพื่อเพิ่มมิติเชิงลึก"
           ],
           referenceInspirations: [
-            { title: "Wabi-Sabi Portfolio", desc: "การนำเสนอความงามบนความไม่สมบูรณ์แบบ", aspect: "ความสมมาตรและโทนสีหินทราย" },
-            { title: "Botanical E-Commerce", desc: "เว็บขายสินค้าธรรมชาติสไตล์สแกนดิเนเวียน", aspect: "การจัดเลย์เอาต์โปร่งตา" }
+            { title: "Sleek Digital Product", desc: "การออกแบบอุปกรณ์และอินเตอร์เฟสแบบไร้รอยต่อ", aspect: "การเลือกใช้ผิวสัมผัสอลูมิเนียมอโนไดซ์และสี Slate" },
+            { title: "Premium Brand Collaterals", desc: "สื่อสิ่งพิมพ์และอัตลักษณ์ดิจิทัลของสตูดิโอศิลปะ", aspect: "การจัดเลย์เอาต์เน้นตัวหนังสือแนวสแกนดิเนเวีย" }
           ]
         }
       });

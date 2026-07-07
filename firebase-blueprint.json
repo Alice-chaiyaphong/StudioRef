@@ -1,0 +1,20 @@
+{
+  "collections": {
+    "My Desing": {
+      "fields": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "colors": { "type": "array" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "timestamp" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" }
+      },
+      "indexes": []
+    }
+  }
+}

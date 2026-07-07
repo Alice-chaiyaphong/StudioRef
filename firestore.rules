@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{coll}/{documentId} {
+      // Anyone can read and view the shared design portfolio
+      allow read: if coll == "My Desing";
+      
+      // Only authenticated users can write, and they must be the owner of the document to delete/update
+      allow create: if coll == "My Desing" && request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if coll == "My Desing" && request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}

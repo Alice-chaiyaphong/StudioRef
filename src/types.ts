@@ -8,7 +8,7 @@ export interface ColorSpecification {
 export interface ColorPalette {
   id: string;
   title: string;
-  category: 'Earth Tone' | 'Warm Cream' | 'Nordic Botanical' | 'Soft Minimal' | 'Muted Terracotta' | 'Japanese Zen';
+  category: string;
   description: string;
   colors: ColorSpecification[];
   tags: string[];
@@ -19,7 +19,7 @@ export interface ReferenceDesign {
   id: string;
   title: string;
   subtitle: string;
-  category: 'Interior' | 'Web Design' | 'Branding' | 'Packaging' | 'Mobile App' | 'Editorial Portfolio' | 'Architecture';
+  category: string;
   description: string;
   imageUrl: string;
   tags: string[];
