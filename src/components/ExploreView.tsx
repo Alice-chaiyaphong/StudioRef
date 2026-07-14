@@ -40,7 +40,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
   });
 
   return (
-    <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 overflow-hidden bg-[#F4F7F6]">
+    <main className="flex-1 flex flex-col p-3 sm:p-5 md:p-6 overflow-y-auto bg-[#F4F7F6]">
       {/* Header section matching exact design HTML */}
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-4 shrink-0">
         <div>
@@ -116,7 +116,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
       </div>
 
       {/* Main Grid View */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 mb-4 overflow-y-auto pr-1 pb-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pb-8">
         {filtered.length > 0 ? (
           filtered.map((item, idx) => (
             <ReferenceCard 

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Upload, Image, Palette, Sparkles, Loader2, Check, Type, Info, Plus, Trash2 } from 'lucide-react';
 import { User } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase.ts';
 
 interface AddContentModalProps {
@@ -10,6 +10,7 @@ interface AddContentModalProps {
   user: User | null;
   onPromptSignIn: () => void;
   onSuccess: () => void;
+  editItem?: any;
 }
 
 const CATEGORIES = [
@@ -26,7 +27,8 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
   onClose,
   user,
   onPromptSignIn,
-  onSuccess
+  onSuccess,
+  editItem
 }) => {
   const [contentType, setContentType] = useState<'design' | 'palette'>('design');
   const [loading, setLoading] = useState(false);
@@ -56,6 +58,36 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
     { hex: '#3A6360', name: 'Slate Spruce', role: 'Accent 5%' },
     { hex: '#1E2E31', name: 'Deep Abyss', role: 'Text 2%' }
   ]);
+
+  useEffect(() => {
+    if (editItem) {
+      setContentType(editItem.type || 'design');
+      setTitle(editItem.title || '');
+      setCategory(editItem.category || 'Graphic Design');
+      setDescription(editItem.description || '');
+      setTagsInput(editItem.tags ? editItem.tags.join(', ') : '');
+      
+      if (editItem.type === 'design') {
+        setSubtitle(editItem.subtitle || '');
+        setImageUrl(editItem.imageUrl || '');
+        setDesignPalette(editItem.palette || ['#EBF1F0', '#B8CAC4', '#7A938E', '#3A6360', '#1E2E31']);
+        setTypographyHeading(editItem.typography?.heading || 'Space Grotesk');
+        setTypographyBody(editItem.typography?.body || 'Inter');
+        setTypographyVibe(editItem.typography?.vibe || 'Clean & Tech-forward');
+        setLayoutNotesInput(editItem.layoutNotes ? editItem.layoutNotes.join('\n') : '');
+      } else {
+        setPaletteColors(editItem.colors || [
+          { hex: '#F4F7F6', name: 'Cotton Frost', role: 'Background 60%' },
+          { hex: '#EBF1F0', name: 'Ice Mint', role: 'Surface 25%' },
+          { hex: '#B8CAC4', name: 'Sage Mist', role: 'Border 8%' },
+          { hex: '#3A6360', name: 'Slate Spruce', role: 'Accent 5%' },
+          { hex: '#1E2E31', name: 'Deep Abyss', role: 'Text 2%' }
+        ]);
+      }
+    } else {
+      resetForm();
+    }
+  }, [editItem, isOpen]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,13 +207,18 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
         description,
         type: contentType,
         tags: tags.length > 0 ? tags : [contentType === 'design' ? 'Design' : 'Palette', category],
-        createdAt: serverTimestamp(),
-        userId: user.uid,
-        userEmail: user.email || '',
-        userName: user.displayName || 'Designer',
-        userPhoto: user.photoURL || '',
-        likes: 0
+        userId: editItem ? (editItem.userId || user.uid) : user.uid,
+        userEmail: editItem ? (editItem.userEmail || user.email || '') : (user.email || ''),
+        userName: editItem ? (editItem.userName || user.displayName || 'Designer') : (user.displayName || 'Designer'),
+        userPhoto: editItem ? (editItem.userPhoto || user.photoURL || '') : (user.photoURL || ''),
       };
+
+      if (!editItem) {
+        docData.likes = 0;
+        docData.createdAt = serverTimestamp();
+      } else {
+        docData.updatedAt = serverTimestamp();
+      }
 
       if (contentType === 'design') {
         docData.subtitle = subtitle || category;
@@ -204,22 +241,68 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
         }));
       }
 
-      // Add to Firestore collection "My Desing" as requested
+      // Add or Edit in Firestore collection "My Desing" as requested
       try {
-        await addDoc(collection(db, 'My Desing'), docData);
+        if (editItem) {
+          const isLocal = String(editItem.id).startsWith('local_');
+          if (isLocal) {
+            const existingLocalStr = localStorage.getItem('community_items_local');
+            const existingLocal = existingLocalStr ? JSON.parse(existingLocalStr) : [];
+            const updatedLocal = existingLocal.map((item: any) => 
+              item.id === editItem.id ? { 
+                ...item, 
+                ...docData, 
+                createdAt: item.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString() 
+              } : item
+            );
+            localStorage.setItem('community_items_local', JSON.stringify(updatedLocal));
+            window.dispatchEvent(new Event('local_community_items_updated'));
+          } else {
+            const docRef = doc(db, 'My Desing', editItem.id);
+            await updateDoc(docRef, docData);
+          }
+        } else {
+          await addDoc(collection(db, 'My Desing'), docData);
+        }
       } catch (err: any) {
         console.warn('Utilizing local storage backup for client-side persistence:', err);
         // Save locally to localStorage so it is instantly available and preserved offline!
         const existingLocalStr = localStorage.getItem('community_items_local');
         const existingLocal = existingLocalStr ? JSON.parse(existingLocalStr) : [];
-        const newLocalItem = {
-          id: 'local_' + Date.now(),
-          ...docData,
-          createdAt: new Date().toISOString() // ISO string for local sorting
-        };
-        const updatedLocal = [newLocalItem, ...existingLocal];
-        localStorage.setItem('community_items_local', JSON.stringify(updatedLocal));
+        
+        if (editItem) {
+          const updatedLocal = existingLocal.map((item: any) => 
+            item.id === editItem.id ? { 
+              ...item, 
+              ...docData, 
+              createdAt: item.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString() 
+            } : item
+          );
+          localStorage.setItem('community_items_local', JSON.stringify(updatedLocal));
+        } else {
+          const newLocalItem = {
+            id: 'local_' + Date.now(),
+            ...docData,
+            createdAt: new Date().toISOString() // ISO string for local sorting
+          };
+          const updatedLocal = [newLocalItem, ...existingLocal];
+          localStorage.setItem('community_items_local', JSON.stringify(updatedLocal));
+        }
+        
         window.dispatchEvent(new Event('local_community_items_updated'));
+
+        // Inform the user about the cloud sync failure and local fallback
+        alert(
+          `⚠️ บันทึกข้อมูลสำเร็จเฉพาะในเครื่องของคุณ (Local Storage)!\n\n` +
+          `หมายเหตุ: ข้อมูลนี้ยังไม่สามารถส่งขึ้นระบบ Cloud Firestore ได้เนื่องจากข้อผิดพลาด:\n` +
+          `"${err.message || err}"\n\n` +
+          `คำแนะนำ:\n` +
+          `1. โปรดตรวจสอบว่าได้ล็อกอินผ่านบัญชี Google เรียบร้อยแล้ว\n` +
+          `2. ตรวจสอบว่าระบบ Cloud Firestore ได้รับการเปิดใช้งานและสร้างฐานข้อมูลเรียบร้อยแล้ว\n` +
+          `3. ตรวจสอบว่ากฎความปลอดภัย (Security Rules) ในโปรเจกต์ของคุณอนุญาตให้เขียนข้อมูลชุดนี้`
+        );
       }
       
       // Reset State & Notify Success
@@ -233,7 +316,7 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
     }
   };
 
-  const resetForm = () => {
+  function resetForm() {
     setTitle('');
     setCategory('Graphic Design');
     setDescription('');
@@ -252,7 +335,7 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
       { hex: '#3A6360', name: 'Slate Spruce', role: 'Accent 5%' },
       { hex: '#1E2E31', name: 'Deep Abyss', role: 'Text 2%' }
     ]);
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto" onClick={onClose}>
@@ -265,10 +348,10 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
           <div>
             <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A938E]">Community Showcase</span>
             <h2 className="text-xl sm:text-2xl font-serif italic text-[#1E2E31] mt-1 font-bold">
-              แชร์ผลงานใหม่ของคุณ 🚀
+              {editItem ? 'แก้ไขผลงานที่แชร์ ✏️' : 'แชร์ผลงานใหม่ของคุณ 🚀'}
             </h2>
             <p className="text-xs text-[#5C7276] mt-0.5">
-              แสดงไอเดียงานดีไซน์หรือพาเลทสีโทนเย็น เพื่อแชร์สร้างแรงบันดาลใจให้เพื่อนๆ ดีไซเนอร์
+              {editItem ? 'ปรับปรุงรายละเอียดผลงานดีไซน์หรือพาเลทสีของคุณให้สมบูรณ์ยิ่งขึ้น' : 'แสดงไอเดียงานดีไซน์หรือพาเลทสีโทนเย็น เพื่อแชร์สร้างแรงบันดาลใจให้เพื่อนๆ ดีไซเนอร์'}
             </p>
           </div>
           <button 
@@ -303,8 +386,9 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
         <div className="grid grid-cols-2 bg-[#F4F7F6] p-1 rounded-xl mb-6 border border-[#D1DDD9]/60">
           <button
             type="button"
+            disabled={!!editItem}
             onClick={() => setContentType('design')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
               contentType === 'design'
                 ? 'bg-white text-[#1E2E31] shadow-xs'
                 : 'text-[#7A938E] hover:text-[#1E2E31]'
@@ -315,8 +399,9 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
           </button>
           <button
             type="button"
+            disabled={!!editItem}
             onClick={() => setContentType('palette')}
-            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
               contentType === 'palette'
                 ? 'bg-white text-[#1E2E31] shadow-xs'
                 : 'text-[#7A938E] hover:text-[#1E2E31]'
@@ -641,18 +726,18 @@ export const AddContentModal: React.FC<AddContentModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading || uploadingImage || !user}
+              disabled={loading || uploadingImage}
               className="px-6 py-2.5 bg-[#3A6360] hover:bg-[#1E2E31] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>กำลังแชร์ลงบอร์ด...</span>
+                  <span>{editItem ? 'กำลังบันทึกการแก้ไข...' : 'กำลังแชร์ลงบอร์ด...'}</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 text-[#2E8B90] animate-pulse" />
-                  <span>แชร์งานดีไซน์ / พาเลทสี</span>
+                  <span>{editItem ? 'บันทึกการแก้ไข' : 'แชร์งานดีไซน์ / พาเลทสี'}</span>
                 </>
               )}
             </button>

@@ -1,12 +1,15 @@
 import React from 'react';
 import { ReferenceDesign } from '../types.ts';
-import { Bookmark, Heart, Sparkles } from 'lucide-react';
+import { Bookmark, Heart, Sparkles, Pencil } from 'lucide-react';
+import { User } from 'firebase/auth';
 
 interface ReferenceCardProps {
   design: ReferenceDesign;
   onSelect: (design: ReferenceDesign) => void;
   onToggleBookmark: (id: string, e: React.MouseEvent) => void;
   index: number;
+  user?: User | null;
+  onEdit?: (design: ReferenceDesign, e: React.MouseEvent) => void;
 }
 
 const CARD_BACKGROUNDS = [
@@ -20,9 +23,12 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
   design,
   onSelect,
   onToggleBookmark,
-  index
+  index,
+  user,
+  onEdit
 }) => {
   const bgClass = CARD_BACKGROUNDS[index % CARD_BACKGROUNDS.length];
+  const isOwner = user && (design.userId === user.uid || design.id.startsWith('local_'));
 
   return (
     <div 
@@ -33,7 +39,7 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
       <div className="absolute top-0 left-0 w-full h-full bg-[#3A6360] opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none"></div>
 
       {/* Preview Image Frame - NOW AT THE TOP OF THE CARD */}
-      <div className="w-full aspect-[4/3] bg-[#CBDAD5] rounded-2xl border border-black/5 shadow-inner overflow-hidden relative z-10 mb-3.5">
+      <div className="w-full aspect-video sm:aspect-[4/3] bg-[#CBDAD5] rounded-2xl border border-black/5 shadow-inner overflow-hidden relative z-10 mb-3.5">
         <img 
           src={design.imageUrl} 
           alt={design.title} 
@@ -43,21 +49,47 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
         
         {/* Card Header overlay on top of image */}
         <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex justify-between items-center">
-          <span className="text-[9px] bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full uppercase tracking-widest font-bold text-[#3A6360] shadow-sm">
-            {design.category}
-          </span>
+          <div className="flex gap-1.5 items-center">
+            <span className="text-[9px] bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full uppercase tracking-widest font-bold text-[#3A6360] shadow-sm">
+              {design.category}
+            </span>
+            {((design as any).price !== undefined || (design as any).priceCondition) && (
+              <span className={`text-[9px] backdrop-blur-md px-2 py-0.5 rounded-full tracking-wide font-bold shadow-sm ${
+                (design as any).priceCondition === 'free' || !(design as any).priceCondition
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-[#B86B52] text-white'
+              }`}>
+                {(design as any).priceCondition === 'free' ? 'FREE' : (design as any).priceCondition === 'premium' ? 'PREMIUM' : `${(design as any).price} ฿`}
+              </span>
+            )}
+          </div>
 
-          <button
-            onClick={(e) => onToggleBookmark(design.id, e)}
-            className={`p-1.5 rounded-full transition-colors duration-200 shadow-sm ${
-              design.bookmarked 
-                ? 'bg-[#3A6360] text-white' 
-                : 'bg-white/90 text-[#5C7276] hover:bg-white text-[#2C3E42]'
-            }`}
-            title={design.bookmarked ? 'นำออกจากมู้ดบอร์ด' : 'บันทึกลงมู้ดบอร์ด'}
-          >
-            <Bookmark className="w-3 h-3 fill-current" />
-          </button>
+          <div className="flex gap-1.5 items-center">
+            {isOwner && onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(design, e);
+                }}
+                className="p-1.5 rounded-full bg-white/90 text-[#3A6360] hover:bg-[#1E2E31] hover:text-white transition-colors duration-200 shadow-sm"
+                title="แก้ไขผลงานดีไซน์"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+
+            <button
+              onClick={(e) => onToggleBookmark(design.id, e)}
+              className={`p-1.5 rounded-full transition-colors duration-200 shadow-sm ${
+                design.bookmarked 
+                  ? 'bg-[#3A6360] text-white' 
+                  : 'bg-white/90 text-[#5C7276] hover:bg-white text-[#2C3E42]'
+              }`}
+              title={design.bookmarked ? 'นำออกจากมู้ดบอร์ด' : 'บันทึกลงมู้ดบอร์ด'}
+            >
+              <Bookmark className="w-3 h-3 fill-current" />
+            </button>
+          </div>
         </div>
         
         {/* Color Palette Chips overlay at bottom */}

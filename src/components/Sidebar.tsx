@@ -1,10 +1,10 @@
 import React from 'react';
-import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe } from 'lucide-react';
+import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe, Settings } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface SidebarProps {
-  activeTab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared';
-  setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared') => void;
+  activeTab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin';
+  setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin') => void;
   savedCount: number;
   sharedCount: number;
   user: User | null;
@@ -172,6 +172,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Sparkles className="w-4 h-4 opacity-80 text-[#2E8B90]" />
               <span className="text-sm">ผู้ช่วยปรึกษา AI</span>
+            </div>
+
+            <div 
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                activeTab === 'admin' 
+                  ? 'bg-[#1C3033] text-[#B8CAC4] shadow-sm font-medium border border-[#3A6360]/30' 
+                  : 'text-[#5C7276] hover:bg-[#D1DDD9] hover:text-[#1E2E31]'
+              }`}
+            >
+              <Settings className="w-4 h-4 opacity-80" />
+              <span className="text-sm">จัดการหลังบ้าน (Admin)</span>
             </div>
           </div>
         </nav>

@@ -10,12 +10,14 @@ import { SharedItemsView } from './components/SharedItemsView.tsx';
 import { ReferenceDetailModal } from './components/ReferenceDetailModal.tsx';
 import { auth, googleProvider, db, handleFirestoreError, OperationType } from './firebase.ts';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AddContentModal } from './components/AddContentModal.tsx';
+import { AdminView } from './components/AdminView.tsx';
+import { AuthModal } from './components/AuthModal.tsx';
 import { AlertTriangle, Copy, Check, X, Globe, ExternalLink, Sparkles, Plus } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved' | 'shared'>('explore');
+  const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin'>('explore');
   const [references, setReferences] = useState<ReferenceDesign[]>(INITIAL_REFERENCES);
   const [palettes, setPalettes] = useState<ColorPalette[]>(CURATED_PALETTES);
   const [selectedReference, setSelectedReference] = useState<ReferenceDesign | null>(null);
@@ -23,10 +25,13 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
   const [communityItems, setCommunityItems] = useState<any[]>([]);
 
   const [authError, setAuthError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -41,6 +46,32 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Listen to browser URL path to support domain/admin
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const path = window.location.pathname;
+      if (path === '/admin' || path.endsWith('/admin')) {
+        setActiveTab('admin');
+      }
+    };
+
+    // Check on initial load
+    handleUrlChange();
+
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
+
+  // Update path dynamically when tab changes
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (activeTab === 'admin' && currentPath !== '/admin' && !currentPath.endsWith('/admin')) {
+      window.history.pushState({}, '', '/admin');
+    } else if (activeTab !== 'admin' && (currentPath === '/admin' || currentPath.endsWith('/admin'))) {
+      window.history.pushState({}, '', '/');
+    }
+  }, [activeTab]);
 
   const loadLocalCommunityItems = () => {
     try {
@@ -114,6 +145,7 @@ export default function App() {
 
     const q = query(collection(db, "My Desing"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      setFirestoreError(null); // Reset any error state upon successful real-time connection!
       const liveItems = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -132,6 +164,7 @@ export default function App() {
         console.warn('Error updating local storage cache:', e);
       }
     }, (error) => {
+      setFirestoreError(error instanceof Error ? error.message : String(error));
       try {
         handleFirestoreError(error, OperationType.LIST, "My Desing");
       } catch (err) {
@@ -207,6 +240,122 @@ export default function App() {
     setPalettes(prev => [newPal, ...prev]);
   };
 
+  const handleEditItem = (item: any) => {
+    setEditingItem(item);
+    setIsAddModalOpen(true);
+  };
+
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedFirestore = async () => {
+    if (!user) {
+      alert('กรุณาเข้าสู่ระบบก่อนนำเข้าข้อมูลตัวอย่าง');
+      await handleGoogleSignIn();
+      return;
+    }
+    setSeeding(true);
+    try {
+      const itemsToSeed = [
+        {
+          title: 'Nordic Clean Studio',
+          subtitle: 'Minimal Web Portfolio Layout',
+          type: 'design',
+          description: 'การจัดเลย์เอาต์แนวพอร์ตโฟลิโอสไตล์นอร์ดิก คุมโทนสีขาวครีมและเขียวหม่น ดูสุขุมและโปร่งสบายตา',
+          imageUrl: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+          palette: ['#F9F7F2', '#EBE7E0', '#7C786F', '#3E4E4B', '#1E2E31'],
+          tags: ['Web UI', 'Editorial', 'Minimal', 'Nordic'],
+          typography: {
+            heading: 'Playfair Display',
+            body: 'Inter',
+            vibe: 'พรีเมียม ร่วมสมัย สะอาดตา'
+          },
+          layoutNotes: [
+            'ใช้ระยะห่างและ Margin กว้างกว่าปกติเพื่อความพรีเมียม',
+            'เลือกคู่สีเบจครีมเป็นพื้นหลังตัดกับตัวอักษรสีเขียวหม่นและดำเข้ม'
+          ],
+          createdAt: serverTimestamp(),
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || 'Woranech',
+          userPhoto: user.photoURL || '',
+          likes: 12
+        },
+        {
+          title: 'Ocean Frost Palette',
+          type: 'palette',
+          description: 'โทนสีเย็นที่ได้รับแรงบันดาลใจจากทะเลฤดูหนาวและเกล็ดน้ำแข็ง เหมาะกับงานดีไซน์ที่ต้องการความสุขุม เยือกเย็น และความโปร่งใส',
+          colors: [
+            { hex: '#EBF1F0', name: 'Ice Dust', role: 'Main Background' },
+            { hex: '#B8CAC4', name: 'Sage Frost', role: 'Muted Accent' },
+            { hex: '#7A938E', name: 'Ocean Mist', role: 'Secondary Accent' },
+            { hex: '#3A6360', name: 'Deep Sage', role: 'Primary Brand' },
+            { hex: '#1E2E31', name: 'Midnight Pine', role: 'Dominant Text' }
+          ],
+          tags: ['Cool Tone', 'Nature', 'Ocean', 'Frost'],
+          createdAt: serverTimestamp(),
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || 'Woranech',
+          userPhoto: user.photoURL || '',
+          likes: 8
+        },
+        {
+          title: 'Minimal Japanese Garden',
+          subtitle: 'Wabi-Sabi Workspace Design',
+          type: 'design',
+          description: 'จัดระเบียบองค์ประกอบภาพแนวเซน คุมโทนสีธรรมชาติหินและใบไผ่แห้งเพื่อความเรียบง่าย นิ่งสงบ',
+          imageUrl: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80',
+          palette: ['#FDFCF9', '#D9D4CC', '#5A5A40', '#3E3C38', '#2D2D1B'],
+          tags: ['Japanese', 'Interior', 'Calm', 'Wabi-Sabi'],
+          typography: {
+            heading: 'Noto Serif JP',
+            body: 'Inter',
+            vibe: 'เรียบง่าย นิ่งสงบ มีระดับ'
+          },
+          layoutNotes: [
+            'เน้นความโปร่งและเส้นตารางแนวตั้ง',
+            'ใช้ระยะเบลอฉากหลังเพื่อความนุ่มละมุนตา'
+          ],
+          createdAt: serverTimestamp(),
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || 'Woranech',
+          userPhoto: user.photoURL || '',
+          likes: 18
+        },
+        {
+          title: 'Frozen Arctic Palette',
+          type: 'palette',
+          description: 'พาเลทคู่สีเยือกแข็งสไตล์ขั้วโลกเหนือ สำหรับงานพัฒนาซอฟต์แวร์หรือเทคโนโลยีที่ต้องการความคลีน ทันสมัย และเป็นมืออาชีพ',
+          colors: [
+            { hex: '#F0F4F8', name: 'Glacier Blue', role: 'Background 60%' },
+            { hex: '#D9E2EC', name: 'Snowy Sky', role: 'Surface 25%' },
+            { hex: '#BCCCDC', name: 'Arctic Mist', role: 'Border 8%' },
+            { hex: '#486581', name: 'Cold Ocean', role: 'Primary Brand' },
+            { hex: '#102A43', name: 'Midnight Deep', role: 'Text 2%' }
+          ],
+          tags: ['Arctic', 'Cool Tone', 'Corporate', 'Tech'],
+          createdAt: serverTimestamp(),
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || 'Woranech',
+          userPhoto: user.photoURL || '',
+          likes: 15
+        }
+      ];
+
+      for (const item of itemsToSeed) {
+        await addDoc(collection(db, "My Desing"), item);
+      }
+      alert('นำเข้าข้อมูลเริ่มต้นสำเร็จแล้ว! ข้อมูลได้เชื่อมโยงและนำขึ้นระบบ Cloud Firestore เรียบร้อยแล้ว');
+    } catch (err: any) {
+      console.error('Error seeding data:', err);
+      alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + err.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const savedCount = references.filter(r => r.bookmarked).length;
 
   const mySharedDesigns = user 
@@ -217,8 +366,22 @@ export default function App() {
     : [];
   const sharedCount = mySharedDesigns.length + mySharedPalettes.length;
 
+  if (activeTab === 'admin') {
+    return (
+      <AdminView 
+        user={user}
+        communityItems={communityItems}
+        onRefreshData={() => {
+          // Trigger real-time synchronization on the client
+          window.dispatchEvent(new Event('local_community_items_updated'));
+        }}
+        onGoBack={() => setActiveTab('explore')}
+      />
+    );
+  }
+
   return (
-    <div className="h-screen w-full bg-[#F4F7F6] text-[#2C3E42] flex flex-col md:flex-row overflow-hidden font-sans select-none" style={{ backgroundColor: '#F4F7F6' }}>
+    <div className="h-screen w-full bg-[#324c54] text-[#2C3E42] flex flex-col md:flex-row overflow-hidden font-sans select-none" style={{ backgroundColor: '#324c54' }}>
       {/* Fixed Left Navigation Rail */}
       <Sidebar 
         activeTab={activeTab} 
@@ -226,7 +389,7 @@ export default function App() {
         savedCount={savedCount}
         sharedCount={sharedCount}
         user={user}
-        onSignIn={handleGoogleSignIn}
+        onSignIn={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
       />
 
@@ -274,40 +437,46 @@ export default function App() {
             allDesigns={communityDesigns}
             allPalettes={communityPalettes}
             user={user}
-            onSignIn={handleGoogleSignIn}
+            onSignIn={() => setIsAuthModalOpen(true)}
             onSelectReference={(ref) => setSelectedReference(ref)}
             onToggleBookmark={handleToggleBookmark}
             onOpenAddModal={() => setIsAddModalOpen(true)}
+            onSeedFirestore={handleSeedFirestore}
+            seeding={seeding}
+            firestoreError={firestoreError}
+            onEditItem={handleEditItem}
           />
         )}
 
         {/* Floating Action Buttons (FABs) in the Bottom Right Corner */}
         <div className="fixed md:absolute bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
           {activeTab !== 'ai' && (
-            <button 
-              onClick={() => handleOpenAIAssistant("แนะนำเรฟดีไซน์และโทนสีมินิมอลโมเดิร์นโทนเย็นสำหรับปรึกษางานใหม่ให้หน่อย")}
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3A6360] text-white flex items-center justify-center hover:bg-[#2C4B49] hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
-              title="ปรึกษา AI"
-              id="fab-consult-ai"
-            >
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
-                ปรึกษา AI ✨
-              </span>
-            </button>
-          )}
+            <>
+              <button 
+                onClick={() => handleOpenAIAssistant("แนะนำเรฟดีไซน์และโทนสีมินิมอลโมเดิร์นโทนเย็นสำหรับปรึกษางานใหม่ให้หน่อย")}
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3A6360] text-white flex items-center justify-center hover:bg-[#2C4B49] hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+                title="ปรึกษา AI"
+                id="fab-consult-ai"
+              >
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+                  ปรึกษา AI ✨
+                </span>
+              </button>
 
-          <button 
-            onClick={() => setIsAddModalOpen(true)}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#1E2E31] text-white flex items-center justify-center hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
-            title="แชร์ผลงานใหม่"
-            id="fab-share-design"
-          >
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8CAC4]" />
-            <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
-              แชร์ผลงานใหม่ ✦
-            </span>
-          </button>
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#1E2E31] text-white flex items-center justify-center hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+                title="แชร์ผลงานใหม่"
+                id="fab-share-design"
+              >
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8CAC4]" />
+                <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+                  แชร์ผลงานใหม่ ✦
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -396,10 +565,27 @@ export default function App() {
       {/* Add Content Form Modal */}
       <AddContentModal 
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingItem(null);
+        }}
         user={user}
-        onPromptSignIn={handleGoogleSignIn}
-        onSuccess={() => setIsAddModalOpen(false)}
+        onPromptSignIn={() => setIsAuthModalOpen(true)}
+        onSuccess={() => {
+          setIsAddModalOpen(false);
+          setEditingItem(null);
+        }}
+        editItem={editingItem}
+      />
+
+      {/* Custom Auth & Registration Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(loggedInUser) => {
+          setUser(loggedInUser);
+          setIsAuthModalOpen(false);
+        }}
       />
     </div>
   );
