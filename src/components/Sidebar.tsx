@@ -1,5 +1,5 @@
 import React from 'react';
-import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe, Settings } from 'lucide-react';
+import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe, Settings, Bell } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface SidebarProps {
@@ -10,6 +10,7 @@ interface SidebarProps {
   user: User | null;
   onSignIn: () => void;
   onSignOut: () => void;
+  onOpenNotifications?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -19,7 +20,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   sharedCount,
   user,
   onSignIn,
-  onSignOut
+  onSignOut,
+  onOpenNotifications
 }) => {
   return (
     <>
@@ -36,6 +38,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Notification Button */}
+          {onOpenNotifications && (
+            <button
+              onClick={onOpenNotifications}
+              className="w-9 h-9 flex items-center justify-center text-[#5C7276] hover:text-[#1E2E31] bg-white rounded-full border border-[#D1DDD9] shadow-2xs hover:bg-[#D1DDD9] transition-colors cursor-pointer relative"
+              title="การแจ้งเตือน Web Browser (FCM)"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+            </button>
+          )}
+
           {user ? (
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex flex-col items-end">
@@ -185,6 +199,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Settings className="w-4 h-4 opacity-80" />
               <span className="text-sm">จัดการหลังบ้าน (Admin)</span>
             </div>
+
+            {onOpenNotifications && (
+              <div 
+                onClick={onOpenNotifications}
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-[#5C7276] hover:bg-[#D1DDD9] hover:text-[#1E2E31] border border-dashed border-[#B8CAC4]/60"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell className="w-4 h-4 text-[#3A6360]" />
+                  <span className="text-sm font-medium">แจ้งเตือน Web Push</span>
+                </div>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+              </div>
+            )}
           </div>
         </nav>
 

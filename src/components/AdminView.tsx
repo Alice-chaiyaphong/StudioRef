@@ -36,8 +36,12 @@ import {
   Filter,
   Check,
   AlertCircle,
-  AlertTriangle
+  AlertTriangle,
+  Bell,
+  BellRing,
+  Send
 } from 'lucide-react';
+import { pushAppNotification, showNativeBrowserNotification } from '../services/notificationService.ts';
 
 interface AdminViewProps {
   user: any;
@@ -421,12 +425,25 @@ export const AdminView: React.FC<AdminViewProps> = ({
         }
       }
 
+      // Push Web Browser FCM Notification for new additions
+      if (!editingItem) {
+        pushAppNotification({
+          title: formType === 'design' ? `✨ ดีไซน์ใหม่: ${formTitle}` : `🎨 พาเลทสีใหม่: ${formTitle}`,
+          body: formDescription || 'มีการเพิ่มผลงานใหม่ในระบบ StudioRef ให้คุณได้สำรวจ',
+          type: formType,
+          targetUrl: '/'
+        }).catch(e => console.warn('[FCM Notification trigger error]', e));
+      }
+
       // Refresh data
       window.dispatchEvent(new Event('local_community_items_updated'));
       if (onRefreshData) onRefreshData();
       await loadItems();
       setIsFormOpen(false);
-      alert(editingItem ? "อัปเดตบทความเรียบร้อยแล้ว!" : "เพิ่มบทความใหม่เข้าสู่ระบบหลังบ้านเรียบร้อยแล้ว!");
+      setNotification({
+        message: editingItem ? "อัปเดตบทความเรียบร้อยแล้ว!" : "เพิ่มบทความใหม่และส่งแจ้งเตือน Web Browser สำเร็จ! 🔔",
+        type: 'success'
+      });
     } catch (err: any) {
       console.error("Failed to submit form", err);
       setFormError("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + err.message);
@@ -617,6 +634,32 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <Palette className="w-3.5 h-3.5 text-[#B8CAC4]" /> <span>+ พาเลทสี</span>
                   </button>
                 </div>
+              </div>
+
+              {/* FCM Web Push Notification Tool */}
+              <div className="bg-[#101F21]/60 p-3 lg:p-4 rounded-2xl border border-[#3A6360]/20 space-y-2 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-[#9AD6CD] flex items-center gap-1">
+                    <BellRing className="w-3 h-3 text-emerald-400" /> Firebase Web Push
+                  </span>
+                  <span className="text-[8px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-bold">FCM</span>
+                </div>
+                <p className="text-[9px] text-[#7A938E]">ส่งข้อความแจ้งเตือนผ่าน Web Browser ไปยังผู้ใช้งานทั้งหมด</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await pushAppNotification({
+                      title: '📢 ข้อความจากผู้ดูแลระบบ StudioRef',
+                      body: 'มีอัปเดตระบบและการเพิ่มแรงบันดาลใจดีไซน์ใหม่ล่าสุด',
+                      type: 'system',
+                      targetUrl: '/'
+                    });
+                    setNotification({ message: 'ส่ง Broadcast Push Notification สำเร็จ! 🚀', type: 'success' });
+                  }}
+                  className="w-full py-2 bg-[#253D41] hover:bg-[#3A6360] text-white text-[10px] font-bold rounded-lg border border-[#3A6360]/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-3 h-3" /> <span>ส่ง Broadcast แจ้งเตือน</span>
+                </button>
               </div>
 
               {/* Data Statistics Panel */}

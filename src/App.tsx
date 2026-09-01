@@ -14,7 +14,9 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 
 import { AddContentModal } from './components/AddContentModal.tsx';
 import { AdminView } from './components/AdminView.tsx';
 import { AuthModal } from './components/AuthModal.tsx';
-import { AlertTriangle, Copy, Check, X, Globe, ExternalLink, Sparkles, Plus } from 'lucide-react';
+import { NotificationCenterModal } from './components/NotificationCenterModal.tsx';
+import { setupForegroundMessageListener, AppNotification } from './services/notificationService.ts';
+import { AlertTriangle, Copy, Check, X, Globe, ExternalLink, Sparkles, Plus, BellRing } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin'>('explore');
@@ -26,6 +28,8 @@ export default function App() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [toastNotification, setToastNotification] = useState<AppNotification | null>(null);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [communityItems, setCommunityItems] = useState<any[]>([]);
 
@@ -45,6 +49,21 @@ export default function App() {
       setUser(currentUser);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Setup Firebase Cloud Messaging foreground message listener
+  useEffect(() => {
+    const unsubscribeFCM = setupForegroundMessageListener((notif) => {
+      setToastNotification(notif);
+      const timer = setTimeout(() => {
+        setToastNotification(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    });
+
+    return () => {
+      if (unsubscribeFCM) unsubscribeFCM();
+    };
   }, []);
 
   // Listen to browser URL path to support domain/admin
@@ -391,6 +410,7 @@ export default function App() {
         user={user}
         onSignIn={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
+        onOpenNotifications={() => setIsNotificationModalOpen(true)}
       />
 
       {/* Main Content Pane */}
@@ -587,6 +607,44 @@ export default function App() {
           setIsAuthModalOpen(false);
         }}
       />
+
+      {/* Firebase Cloud Messaging & Browser Notification Center */}
+      <NotificationCenterModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        user={user}
+      />
+
+      {/* Foreground Floating Push Notification Toast */}
+      {toastNotification && (
+        <div className="fixed top-5 right-5 z-[150] max-w-sm w-full bg-[#1C3033] border border-emerald-500/50 shadow-2xl rounded-2xl p-4 text-white animate-in slide-in-from-top duration-300 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+            <BellRing className="w-4 h-4 animate-bounce" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400">การแจ้งเตือนจากระบบ</span>
+              <button 
+                onClick={() => setToastNotification(null)}
+                className="text-[#7A938E] hover:text-white p-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <h4 className="text-xs font-bold text-white mt-0.5">{toastNotification.title}</h4>
+            <p className="text-[11px] text-[#B8CAC4] mt-0.5 line-clamp-2">{toastNotification.body}</p>
+            <button
+              onClick={() => {
+                setToastNotification(null);
+                setIsNotificationModalOpen(true);
+              }}
+              className="mt-2 text-[10px] text-emerald-300 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <span>เปิดศูนย์การแจ้งเตือน</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

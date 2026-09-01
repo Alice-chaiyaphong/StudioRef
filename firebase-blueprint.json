@@ -29,7 +29,34 @@
         "bio": { "type": "string" },
         "provider": { "type": "string" },
         "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" },
+        "fcmToken": { "type": "string" },
+        "notificationsEnabled": { "type": "boolean" }
+      },
+      "indexes": []
+    },
+    "fcm_tokens": {
+      "fields": {
+        "token": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "platform": { "type": "string" },
+        "createdAt": { "type": "timestamp" },
         "updatedAt": { "type": "timestamp" }
+      },
+      "indexes": []
+    },
+    "notifications": {
+      "fields": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "icon": { "type": "string" },
+        "type": { "type": "string" },
+        "targetUrl": { "type": "string" },
+        "userId": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "timestamp" }
       },
       "indexes": []
     }
