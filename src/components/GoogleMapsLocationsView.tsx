@@ -341,7 +341,35 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
     setSelectedLocation(loc);
     if (leafletMapInstanceRef.current) {
       leafletMapInstanceRef.current.flyTo([loc.lat, loc.lng], 16, { duration: 1 });
+      setTimeout(() => {
+        leafletMapInstanceRef.current?.invalidateSize();
+      }, 300);
     }
+    // On mobile devices in split view, smoothly scroll down to map
+    if (window.innerWidth < 768 && leafletMapContainerRef.current) {
+      setTimeout(() => {
+        leafletMapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
+
+  // Scroll to Map on mobile
+  const handleScrollToMap = () => {
+    if (leafletMapContainerRef.current) {
+      leafletMapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        leafletMapInstanceRef.current?.invalidateSize();
+      }, 400);
+    }
+  };
+
+  // Scroll to top of list on mobile
+  const handleScrollToTop = () => {
+    const rootEl = document.getElementById('google-maps-locations-view');
+    if (rootEl) {
+      rootEl.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Change City Center
@@ -436,7 +464,7 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#F4F7F6]" id="google-maps-locations-view">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto md:overflow-hidden bg-[#F4F7F6]" id="google-maps-locations-view">
       {/* Top Header & Search Controls */}
       <div className="p-3 sm:p-5 border-b border-[#D1DDD9] bg-[#EBF1F0] shrink-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -508,6 +536,22 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
           </div>
         </div>
 
+        {/* Mobile Quick Scroll To Map Pill (Split View Mode Only) */}
+        {viewMode === 'split' && (
+          <div className="mt-2.5 pt-2 border-t border-[#D1DDD9]/60 md:hidden flex items-center justify-between">
+            <span className="text-[11px] text-[#5C7276] font-medium">
+              เลื่อนลงเพื่อดูแผนที่ หรือกดปุ่มลัด:
+            </span>
+            <button
+              onClick={handleScrollToMap}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3A6360] text-white text-xs font-bold rounded-xl shadow-xs active:scale-95 transition-all"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>เลื่อนลงไปดูแผนที่ ({filteredLocations.length}) ↓</span>
+            </button>
+          </div>
+        )}
+
         {/* Search, City & Category Filters */}
         <div className="mt-3.5 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
           {/* Search Input */}
@@ -577,12 +621,12 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
       </div>
 
       {/* Main Interactive Map & List Body */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 flex flex-col md:flex-row overflow-visible md:overflow-hidden relative">
         {/* Left Panel: Location List */}
         <div 
-          className={`w-full md:w-[380px] lg:w-[420px] border-r border-[#D1DDD9] bg-[#F4F7F6] flex flex-col overflow-y-auto scrollbar-none shrink-0 ${
+          className={`w-full md:w-[380px] lg:w-[420px] border-b md:border-b-0 md:border-r border-[#D1DDD9] bg-[#F4F7F6] flex flex-col overflow-visible md:overflow-y-auto scrollbar-none shrink-0 ${
             viewMode === 'map' ? 'hidden' : 'flex'
-          } ${viewMode === 'list' ? 'md:w-full max-w-5xl mx-auto border-r-0' : ''}`}
+          } ${viewMode === 'list' ? 'md:w-full max-w-5xl mx-auto md:border-r-0' : ''}`}
         >
           {filteredLocations.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center justify-center my-auto">
@@ -667,7 +711,7 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
 
                     {/* Address & Quick Direct Links */}
                     <div className="mt-2.5 pt-2 border-t border-[#D1DDD9]/60 flex items-center justify-between text-xs">
-                      <p className="text-[10px] text-[#7A938E] truncate max-w-[200px]">
+                      <p className="text-[10px] text-[#7A938E] truncate max-w-[180px] sm:max-w-[200px]">
                         {loc.address}
                       </p>
 
@@ -705,10 +749,24 @@ export const GoogleMapsLocationsView: React.FC<GoogleMapsLocationsViewProps> = (
 
         {/* Right Panel: Interactive Map Container */}
         <div 
-          className={`flex-1 h-full min-h-[380px] relative flex flex-col ${
+          className={`w-full ${
+            viewMode === 'map' 
+              ? 'h-[calc(100vh-210px)] min-h-[480px] md:h-full md:flex-1' 
+              : 'h-[460px] sm:h-[520px] md:h-full md:flex-1 shrink-0'
+          } relative flex flex-col ${
             viewMode === 'list' ? 'hidden' : 'flex'
           }`}
         >
+          {/* Mobile Back To Top List Button (In Split Mode) */}
+          <div className="md:hidden absolute top-3 left-1/2 -translate-x-1/2 z-20">
+            <button
+              onClick={handleScrollToTop}
+              className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-[#D1DDD9] text-xs font-bold text-[#1E2E31] flex items-center gap-1.5 active:scale-95 transition-all"
+            >
+              <span>↑ เลื่อนกลับไปดูรายการ</span>
+            </button>
+          </div>
+
           {/* Leaflet Map Stage */}
           <div ref={leafletMapContainerRef} className="w-full h-full z-0" />
 
