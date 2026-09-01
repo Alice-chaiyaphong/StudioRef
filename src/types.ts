@@ -17,6 +17,42 @@ export interface ColorPalette {
   userName?: string;
 }
 
+export interface LocationInfo {
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  placeId?: string;
+  mapsUrl?: string;
+  city?: string;
+  country?: string;
+  highlights?: string[];
+  bestTime?: string;
+  aestheticType?: string;
+}
+
+export interface DesignLocation {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: 'Cafe & Dining' | 'Architecture & Studio' | 'Art Gallery & Museum' | 'Craft & Workshop' | 'Botanical & Nature' | 'Co-working & Library';
+  description: string;
+  imageUrl: string;
+  address: string;
+  lat: number;
+  lng: number;
+  mapsUrl: string;
+  city: string;
+  country: string;
+  rating?: number;
+  aestheticTags: string[];
+  palette: string[];
+  referenceId?: string;
+  designHighlights: string[];
+  bestAngleTip: string;
+  likes?: number;
+}
+
 export interface ReferenceDesign {
   id: string;
   title: string;
@@ -36,6 +72,7 @@ export interface ReferenceDesign {
   bookmarked?: boolean;
   userId?: string;
   userName?: string;
+  location?: LocationInfo;
 }
 
 export interface AIAssistantConsultation {

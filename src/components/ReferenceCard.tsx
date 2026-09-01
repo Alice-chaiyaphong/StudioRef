@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReferenceDesign } from '../types.ts';
-import { Bookmark, Heart, Sparkles, Pencil } from 'lucide-react';
+import { Bookmark, Heart, Sparkles, Pencil, MapPin } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface ReferenceCardProps {
@@ -116,9 +116,19 @@ export const ReferenceCard: React.FC<ReferenceCardProps> = ({
           <h3 className="text-base sm:text-lg font-serif italic text-[#1E2E31] leading-snug group-hover:text-[#3A6360] transition-colors font-medium">
             {design.title}
           </h3>
-          <p className="text-[11px] text-[#5C7276] font-semibold mt-0.5">
-            {design.subtitle}
-          </p>
+          
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <span className="text-[11px] text-[#5C7276] font-semibold">
+              {design.subtitle}
+            </span>
+            {design.location && (
+              <span className="text-[9px] bg-[#3A6360]/10 text-[#3A6360] px-1.5 py-0.5 rounded-md font-bold flex items-center gap-0.5">
+                <MapPin className="w-2.5 h-2.5" />
+                <span>{design.location.name}</span>
+              </span>
+            )}
+          </div>
+
           <p className="text-xs opacity-85 mt-1.5 line-clamp-2 text-[#2C3E42] leading-relaxed">
             {design.description}
           </p>

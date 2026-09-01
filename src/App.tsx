@@ -7,6 +7,7 @@ import { PaletteStudioView } from './components/PaletteStudioView.tsx';
 import { AIAssistantView } from './components/AIAssistantView.tsx';
 import { SavedMoodboardView } from './components/SavedMoodboardView.tsx';
 import { SharedItemsView } from './components/SharedItemsView.tsx';
+import { GoogleMapsLocationsView } from './components/GoogleMapsLocationsView.tsx';
 import { ReferenceDetailModal } from './components/ReferenceDetailModal.tsx';
 import { auth, googleProvider, db, handleFirestoreError, OperationType } from './firebase.ts';
 import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
@@ -19,10 +20,11 @@ import { setupForegroundMessageListener, AppNotification } from './services/noti
 import { AlertTriangle, Copy, Check, X, Globe, ExternalLink, Sparkles, Plus, BellRing } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin'>('explore');
+  const [activeTab, setActiveTab] = useState<'explore' | 'locations' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin'>('explore');
   const [references, setReferences] = useState<ReferenceDesign[]>(INITIAL_REFERENCES);
   const [palettes, setPalettes] = useState<ColorPalette[]>(CURATED_PALETTES);
   const [selectedReference, setSelectedReference] = useState<ReferenceDesign | null>(null);
+  const [selectedLocationIdForMap, setSelectedLocationIdForMap] = useState<string | null>(null);
   const [aiConsultPrompt, setAiConsultPrompt] = useState<string | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
 
@@ -402,110 +404,122 @@ export default function App() {
   return (
     <div className="h-screen w-full bg-[#324c54] text-[#2C3E42] flex flex-col md:flex-row overflow-hidden font-sans select-none" style={{ backgroundColor: '#324c54' }}>
       {/* Fixed Left Navigation Rail */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        savedCount={savedCount}
-        sharedCount={sharedCount}
-        user={user}
-        onSignIn={() => setIsAuthModalOpen(true)}
-        onSignOut={handleSignOut}
-        onOpenNotifications={() => setIsNotificationModalOpen(true)}
-      />
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          savedCount={savedCount}
+          sharedCount={sharedCount}
+          user={user}
+          onSignIn={() => setIsAuthModalOpen(true)}
+          onSignOut={handleSignOut}
+          onOpenNotifications={() => setIsNotificationModalOpen(true)}
+        />
 
-      {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col overflow-hidden relative pb-16 md:pb-0">
-        {activeTab === 'explore' && (
-          <ExploreView 
-            references={references}
-            communityDesigns={communityDesigns}
-            onSelectReference={(ref) => setSelectedReference(ref)}
-            onToggleBookmark={handleToggleBookmark}
-            onOpenAIAssistant={handleOpenAIAssistant}
-            onOpenAddModal={() => setIsAddModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'palettes' && (
-          <PaletteStudioView 
-            palettes={palettes}
-            communityPalettes={communityPalettes}
-            onAddPalette={handleAddCustomPalette}
-            onOpenAddModal={() => setIsAddModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'ai' && (
-          <AIAssistantView 
-            initialPrompt={aiConsultPrompt}
-          />
-        )}
-
-        {activeTab === 'saved' && (
-          <SavedMoodboardView 
-            savedReferences={references.filter(r => r.bookmarked)}
-            onSelectReference={(ref) => setSelectedReference(ref)}
-            onToggleBookmark={handleToggleBookmark}
-            onExploreMore={() => setActiveTab('explore')}
-          />
-        )}
-
-        {activeTab === 'shared' && (
-          <SharedItemsView 
-            sharedDesigns={mySharedDesigns}
-            sharedPalettes={mySharedPalettes}
-            allDesigns={communityDesigns}
-            allPalettes={communityPalettes}
-            user={user}
-            onSignIn={() => setIsAuthModalOpen(true)}
-            onSelectReference={(ref) => setSelectedReference(ref)}
-            onToggleBookmark={handleToggleBookmark}
-            onOpenAddModal={() => setIsAddModalOpen(true)}
-            onSeedFirestore={handleSeedFirestore}
-            seeding={seeding}
-            firestoreError={firestoreError}
-            onEditItem={handleEditItem}
-          />
-        )}
-
-        {/* Floating Action Buttons (FABs) in the Bottom Right Corner */}
-        <div className="fixed md:absolute bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
-          {activeTab !== 'ai' && (
-            <>
-              <button 
-                onClick={() => handleOpenAIAssistant("แนะนำเรฟดีไซน์และโทนสีมินิมอลโมเดิร์นโทนเย็นสำหรับปรึกษางานใหม่ให้หน่อย")}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3A6360] text-white flex items-center justify-center hover:bg-[#2C4B49] hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
-                title="ปรึกษา AI"
-                id="fab-consult-ai"
-              >
-                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
-                  ปรึกษา AI ✨
-                </span>
-              </button>
-
-              <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#1E2E31] text-white flex items-center justify-center hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
-                title="แชร์ผลงานใหม่"
-                id="fab-share-design"
-              >
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8CAC4]" />
-                <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
-                  แชร์ผลงานใหม่ ✦
-                </span>
-              </button>
-            </>
+        {/* Main Content Pane */}
+        <div className="flex-1 flex flex-col overflow-hidden relative pb-16 md:pb-0">
+          {activeTab === 'explore' && (
+            <ExploreView 
+              references={references}
+              communityDesigns={communityDesigns}
+              onSelectReference={(ref) => setSelectedReference(ref)}
+              onToggleBookmark={handleToggleBookmark}
+              onOpenAIAssistant={handleOpenAIAssistant}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+            />
           )}
-        </div>
-      </div>
 
-      {/* Reference Modal Specs Detail */}
-      <ReferenceDetailModal 
-        design={selectedReference}
-        onClose={() => setSelectedReference(null)}
-        onToggleBookmark={handleToggleBookmark}
-      />
+          {activeTab === 'locations' && (
+            <GoogleMapsLocationsView 
+              allReferences={[...references, ...communityDesigns]}
+              onSelectReference={(ref) => setSelectedReference(ref)}
+              initialSelectedLocationId={selectedLocationIdForMap}
+            />
+          )}
+
+          {activeTab === 'palettes' && (
+            <PaletteStudioView 
+              palettes={palettes}
+              communityPalettes={communityPalettes}
+              onAddPalette={handleAddCustomPalette}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+            />
+          )}
+
+          {activeTab === 'ai' && (
+            <AIAssistantView 
+              initialPrompt={aiConsultPrompt}
+            />
+          )}
+
+          {activeTab === 'saved' && (
+            <SavedMoodboardView 
+              savedReferences={references.filter(r => r.bookmarked)}
+              onSelectReference={(ref) => setSelectedReference(ref)}
+              onToggleBookmark={handleToggleBookmark}
+              onExploreMore={() => setActiveTab('explore')}
+            />
+          )}
+
+          {activeTab === 'shared' && (
+            <SharedItemsView 
+              sharedDesigns={mySharedDesigns}
+              sharedPalettes={mySharedPalettes}
+              allDesigns={communityDesigns}
+              allPalettes={communityPalettes}
+              user={user}
+              onSignIn={() => setIsAuthModalOpen(true)}
+              onSelectReference={(ref) => setSelectedReference(ref)}
+              onToggleBookmark={handleToggleBookmark}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+              onSeedFirestore={handleSeedFirestore}
+              seeding={seeding}
+              firestoreError={firestoreError}
+              onEditItem={handleEditItem}
+            />
+          )}
+
+          {/* Floating Action Buttons (FABs) in the Bottom Right Corner */}
+          <div className="fixed md:absolute bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-3">
+            {activeTab !== 'ai' && (
+              <>
+                <button 
+                  onClick={() => handleOpenAIAssistant("แนะนำเรฟดีไซน์และโทนสีมินิมอลโมเดิร์นโทนเย็นสำหรับปรึกษางานใหม่ให้หน่อย")}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#3A6360] text-white flex items-center justify-center hover:bg-[#2C4B49] hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+                  title="ปรึกษา AI"
+                  id="fab-consult-ai"
+                >
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+                    ปรึกษา AI ✨
+                  </span>
+                </button>
+
+                <button 
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#1E2E31] text-white flex items-center justify-center hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl cursor-pointer group relative"
+                  title="แชร์ผลงานใหม่"
+                  id="fab-share-design"
+                >
+                  <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-[#B8CAC4]" />
+                  <span className="absolute right-14 sm:right-16 scale-0 group-hover:scale-100 transition-all origin-right bg-[#1E2E31] text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md">
+                    แชร์ผลงานใหม่ ✦
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Reference Modal Specs Detail */}
+        <ReferenceDetailModal 
+          design={selectedReference}
+          onClose={() => setSelectedReference(null)}
+          onToggleBookmark={handleToggleBookmark}
+          onNavigateToLocation={(locationId) => {
+            setSelectedLocationIdForMap(locationId);
+            setActiveTab('locations');
+          }}
+        />
 
       {/* Firebase Domain Authorization Error Modal */}
       {authError && (

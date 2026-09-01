@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { ReferenceDesign } from '../types.ts';
-import { X, Copy, Check, Bookmark, Share2, ExternalLink, Type, Layout, Palette } from 'lucide-react';
+import { X, Copy, Check, Bookmark, Share2, ExternalLink, Type, Layout, Palette, MapPin, Navigation, ArrowUpRight } from 'lucide-react';
 
 interface ReferenceDetailModalProps {
   design: ReferenceDesign | null;
   onClose: () => void;
   onToggleBookmark: (id: string) => void;
+  onNavigateToLocation?: (locationId: string) => void;
 }
 
 export const ReferenceDetailModal: React.FC<ReferenceDetailModalProps> = ({
   design,
   onClose,
-  onToggleBookmark
+  onToggleBookmark,
+  onNavigateToLocation
 }) => {
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
 
@@ -140,6 +142,65 @@ export const ReferenceDetailModal: React.FC<ReferenceDetailModalProps> = ({
                 💡 มู้ด: {design.typography.vibe}
               </p>
             </div>
+
+            {/* Real Location Showcase if Available */}
+            {design.location && (
+              <div className="bg-[#EBF1F0] p-4 rounded-xl border border-[#D1DDD9] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#1E2E31] flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#3A6360]" /> สถานที่จริงที่เป็นแรงบันดาลใจ
+                  </span>
+                  <span className="text-[10px] bg-[#3A6360] text-white px-2 py-0.5 rounded-full font-bold">
+                    Google Maps
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="font-serif italic font-bold text-sm text-[#1E2E31]">
+                    {design.location.name}
+                  </h4>
+                  <p className="text-[11px] text-[#5C7276] mt-0.5">
+                    {design.location.address}
+                  </p>
+                  {design.location.highlights && (
+                    <div className="mt-2 space-y-1">
+                      {design.location.highlights.map((hl, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 text-[11px] text-[#2C3E42]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3A6360]"></span>
+                          <span>{hl}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-[#D1DDD9] flex items-center gap-2">
+                  <a
+                    href={design.location.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(design.location.name + ' ' + design.location.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#3A6360] hover:bg-[#2E4F4C] text-white rounded-xl text-xs font-bold transition-all shadow-2xs"
+                  >
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>เปิดดูใน Google Maps จริง</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+
+                  {onNavigateToLocation && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onNavigateToLocation(design.id);
+                      }}
+                      className="px-3 py-2 bg-white hover:bg-[#DDE5E4] text-[#1E2E31] rounded-xl text-xs font-semibold border border-[#D1DDD9] transition-all cursor-pointer"
+                      title="ดูบนแผนที่ในแอป"
+                    >
+                      ดูแผนที่ในแอป
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Layout Keynotes */}
             <div className="space-y-2">

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe, Settings, Bell } from 'lucide-react';
+import { Compass, Sparkles, Palette, Bookmark, LogIn, LogOut, Globe, Settings, Bell, MapPin } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface SidebarProps {
-  activeTab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin';
-  setActiveTab: (tab: 'explore' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin') => void;
+  activeTab: 'explore' | 'locations' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin';
+  setActiveTab: (tab: 'explore' | 'locations' | 'palettes' | 'ai' | 'saved' | 'shared' | 'admin') => void;
   savedCount: number;
   sharedCount: number;
   user: User | null;
@@ -116,6 +116,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Compass className="w-4 h-4 opacity-80" />
               <span className="text-sm">หน้าแรก & ค้นหา</span>
+            </div>
+
+            <div 
+              onClick={() => setActiveTab('locations')}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                activeTab === 'locations' 
+                  ? 'bg-[#3A6360] text-white shadow-sm font-medium' 
+                  : 'text-[#5C7276] hover:bg-[#D1DDD9] hover:text-[#1E2E31]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <MapPin className="w-4 h-4 opacity-80 text-emerald-600" />
+                <span className="text-sm font-medium">สถานที่จริง Google Maps</span>
+              </div>
+              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
+                activeTab === 'locations' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+              }`}>
+                MAPS
+              </span>
             </div>
 
             <div 
@@ -258,15 +277,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </aside>
 
       {/* MOBILE FLOATING BOTTOM NAV BAR */}
-      <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-[#D1DDD9] justify-around items-center px-4 pb-safe z-40 shadow-lg">
+      <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-[#D1DDD9] justify-around items-center px-2 pb-safe z-40 shadow-lg">
         <button 
           onClick={() => setActiveTab('explore')}
           className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
             activeTab === 'explore' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
           }`}
         >
-          <Compass className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">หน้าแรก</span>
+          <Compass className="w-4.5 h-4.5 mb-0.5" />
+          <span className="text-[9px]">หน้าแรก</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('locations')}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            activeTab === 'locations' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
+          }`}
+        >
+          <MapPin className="w-4.5 h-4.5 mb-0.5 text-emerald-600" />
+          <span className="text-[9px]">แผนที่จริง</span>
         </button>
 
         <button 
@@ -275,10 +304,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             activeTab === 'saved' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
           }`}
         >
-          <Bookmark className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">บันทึกไว้</span>
+          <Bookmark className="w-4.5 h-4.5 mb-0.5" />
+          <span className="text-[9px]">บันทึก</span>
           {savedCount > 0 && (
-            <span className="absolute top-1 right-6 bg-[#3A6360] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+            <span className="absolute top-1 right-3 bg-[#3A6360] text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
               {savedCount}
             </span>
           )}
@@ -290,8 +319,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             activeTab === 'palettes' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
           }`}
         >
-          <Palette className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">พาเลทสี</span>
+          <Palette className="w-4.5 h-4.5 mb-0.5" />
+          <span className="text-[9px]">พาเลทสี</span>
         </button>
 
         <button 
@@ -300,10 +329,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             activeTab === 'shared' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
           }`}
         >
-          <Globe className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">งานแชร์</span>
+          <Globe className="w-4.5 h-4.5 mb-0.5" />
+          <span className="text-[9px]">งานแชร์</span>
           {sharedCount > 0 && (
-            <span className="absolute top-1 right-6 bg-[#3A6360] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
+            <span className="absolute top-1 right-3 bg-[#3A6360] text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
               {sharedCount}
             </span>
           )}
@@ -315,8 +344,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             activeTab === 'ai' ? 'text-[#3A6360] font-semibold' : 'text-[#5C7276]'
           }`}
         >
-          <Sparkles className="w-5 h-5 mb-0.5 text-[#2E8B90]" />
-          <span className="text-[10px]">ผู้ช่วย AI</span>
+          <Sparkles className="w-4.5 h-4.5 mb-0.5 text-[#2E8B90]" />
+          <span className="text-[9px]">AI</span>
         </button>
       </nav>
     </>

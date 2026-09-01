@@ -1,6 +1,6 @@
 {
   "name": "StudioRef",
-  "description": "แอปพลิเคชันค้นหาเรฟเฟอร์เรต ดีไซน์ โทนสี และผู้ช่วย AI นักออกแบบ สไตล์ Natural & Minimal",
-  "requestFramePermissions": [],
+  "description": "แอปพลิเคชันค้นหาเรฟเฟอร์เรต ดีไซน์ โทนสี สถานที่จริงบน Google Maps และผู้ช่วย AI นักออกแบบ สไตล์ Natural & Minimal",
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
